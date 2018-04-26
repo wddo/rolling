@@ -1,6 +1,6 @@
 WRolling
 ==========
-jQuery base on/off toggle menu library
+jQuery base rolling banner library
 
 # Initialize
 single version not `Hanatour`
