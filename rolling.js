@@ -2,7 +2,7 @@
  * <rolling>
  * 
  * @author : Jo Yun Ki (wddo@hanatour.com)
- * @version : 4.0.5
+ * @version : 4.0.6
  * @since : 2013.10.22
  *
  * @classdesc
@@ -17,6 +17,7 @@
  * 4.0.3 (2017.08.28) : lazy 스크롤 이벤트 중복에 따른 이벤트 off() 방지를 위해 lazyDefaultOptions() 에 중복안되는 명으로 event 옵션 추가
  * 4.0.4 (2017.09.21) : dotA 에 태그형태가 아닌상태에서 dynamicDot:true 상황에서 initDotA() 에서 $dotA undefined 문제 해결, $dotA.is('a, button') 로 'button' 추가
  * 4.0.5 (2018.03.19) : searchInstance() 적용
+ * 4.0.6 (2018.06.26) : opts.fit 에 의한 resize 이벤트 복구
  * </pre>
  *
  * <strong>Note</strong>
@@ -44,7 +45,7 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(['libs/jquery.lazyload'], factory) :
-    (global.WToggle = factory());
+    (global.WRolling = factory());
 }(this, function () {
     'use strict';
     var $ = Hanatour.jquery || jQuery;
@@ -63,6 +64,7 @@
             $nextA,
             $dotA,
             $dotHtml,
+            identity = (Math.random().toFixed(16).substr(-5) + new Date().valueOf()),
             opts,
             defaults = defaultOptions(), //기본값
             lazyOpts,
@@ -104,10 +106,10 @@
                 onComplete: undefined
             };
         }
-
+        
         function lazyDefaultOptions() {
             return {
-                event : 'scroll.lazy_rolling_' + (Math.random().toFixed(16).substr(-5) + new Date().valueOf()), //add 4.0.3
+                event : 'scroll.lazy_rolling_' + identity, //add 4.0.3
                 threshold: 0    
             };
         }
@@ -127,6 +129,7 @@
             $dotA = (typeof opts.dotA === 'string' && (opts.dotA.indexOf('<') !== 0/* && !opts.dynamicDot*/)) ? $(opts.dotA) : opts.dotA; //del 4.0.4.. opts.dynamicDot
             isPlay = opts.play;
             distance = (opts.fit && opts.direction === 'horizontal') ? $item.outerWidth() : opts.distance / opts.jump;
+
             itemTotal = $item.length;
             limit = (!opts.repeat) ? 'first' : undefined;
             opts.jump = Math.min(opts.range, opts.jump); //jump는 range 보다 클 수 없다.
@@ -312,14 +315,11 @@
             }
             
             //리사이징
-            $(window).off('.rolling').on('resize.rolling', function (e) {
-                /*
+            $(window).off('resize.' + identity).on('resize.' + identity, function (e) { //add 4.0.6
                 if (opts.fit && opts.direction === 'horizontal' && opts.range === 1 && opts.jump === 1) {
-                    distance = $item.outerWidth() * opts.jump;
-                    
+                    opts.distance = distance = $item.outerWidth();
                     fixPos(0);
                 }
-                */
             });
             
             //터치이벤트
@@ -737,7 +737,7 @@
              * @property {String | jQueryObject}    options.prevA                       - 화살표 이전 jquery 셀렉터
              * @property {String | jQueryObject}    options.nextA                       - 화살표 다음 jquery 셀렉터
              * @property {String | jQueryObject}    options.dotA                        - 도트버튼 jquery 셀렉터 | html 태그
-             * @property {Number}                   options.distance                    - 클릭시 이동할 거리
+             * @property {Number}                   options.distance                    - 클릭 시 이동할 거리
              * @property {Number}                   options.range=1                     - 노출될 리스트 갯수
              * @property {Number}                   options.jump=1                      - 한번에 이동 할 갯수
              * @property {Number}                   options.delay=5000                  - 자동롤링 시간
@@ -805,7 +805,7 @@
                 $nextA.off('.rolling');
                 $dotA.off('.rolling').removeData('idx');
                 $container.off('.rolling').removeData('scope');
-                $(window).off('.rolling');
+                $(window).off('resize.' + identity);
                 
                 $container = undefined;
                 $itemContainer = undefined;
@@ -843,7 +843,7 @@
             },
 
             /**
-             * 리셋. 새로그림
+             * 리셋
              * @instance
              */
             setReset : function () {
